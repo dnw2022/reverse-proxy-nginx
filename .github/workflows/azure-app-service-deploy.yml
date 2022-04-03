@@ -1,0 +1,40 @@
+name: Deploy to Azure App Service (AAS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+env:
+  RESOURCE_GROUP: "rg-dnw"
+  ACR_NAME: "acrdnw"
+  ACR_LOGIN_SERVER: "acrdnw.azurecr.io"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # https://github.com/Azure/login
+      # Also see for the SP creation: https://github.com/Azure/login#configure-deployment-credentials
+      # The scope is necessary
+      # Creating the SP like this
+      # az ad sp create-for-rbac --name $AKS_SERVICE_PRINCIPAL_NAME --role $AKS_CONTRIBUTOR_ROLE_NAME
+      # And afterwars using az role assignment create did not work
+      # Probably because the scope is needed to create the full json
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
+      - name: Build images and push them to Azure Container Service (ACR)
+        run: |-
+          az acr login --name $ACR_NAME
+          ACR_TAG="${{ env.ACR_LOGIN_SERVER }}/reverse-proxy-nginx:latest"
+          docker build -t $ACR_TAG .
+          docker push $ACR_TAG
+          az acr repository list --name $ACR_NAME --output table
