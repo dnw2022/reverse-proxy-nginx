@@ -42,12 +42,67 @@ See ./.github/workflows/azure-app-service-dpeloy.yml
 
 # Create the Azure App Service
 
+Define variables:
+
 ```
-RESOURCE_GROUP="dnw-rg" \
-LOCATION="westeurope" \
+RESOURCE_GROUP=dnw-rg \
+SERVICE_PRINCIPAL_NAME=sp-dnw \
+SUBSCRIPTION_ID=f2485aef-25f1-418d-bb35-92098bbf3b08 \
+CONTRIBUTOR_ROLE_NAME=Contributor \
+LOCATION=westeurope \
+ACR_NAME=acrdnw \
+ACR_LOGIN_SERVER=acrdnw.azurecr.io \
 PLAN="dnw-plan" \
 APP_NAME="reverse-proxy-nginx"
 ```
+
+Create Resource Group:
+
+```
+az group create --name $RESOURCE_GROUP --location $LOCATION
+```
+
+Create Azure Container Registry (ACR)
+
+```
+az acr create \
+  --resource-group $RESOURCE_GROUP \
+  --name $ACR_NAME --sku Basic
+
+ACR_ID=/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ContainerRegistry/registries/$ACR_NAME
+```
+
+Create Service Principal (SP):
+
+```
+az ad sp create-for-rbac \
+  --name $SERVICE_PRINCIPAL_NAME \
+  --role $CONTRIBUTOR_ROLE_NAME \
+  --scopes /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP \
+  --sdk-auth
+```
+
+The output of this command is a json object. You need to create a github secret named AZURE_CREDENTIALS and store this json to be able continuous integration / deployment (CI/CD).
+
+The SP needs to have rights to push to the Azure Container Registry (ACR):
+
+```
+SERVICE_PRINCIPAL_OBJECT_ID=$(az ad sp list --filter "displayname eq '${SERVICE_PRINCIPAL_NAME}'" --query "[].{displayName:displayName, objectId:objectId}" | jq -r '.[0].objectId')
+az role assignment create --assignee $SERVICE_PRINCIPAL_OBJECT_ID --scope $ACR_ID --role acrpush
+```
+
+Create App Service Plan:
+
+```
+az appservice plan create \
+  -g $RESOURCE_GROUP \
+  -n $PLAN \
+  --is-linux \
+  --number-of-workers 1 \
+  --sku B1
+```
+
+Create the Azure App Service:
 
 ```
 az webapp create \
@@ -80,13 +135,17 @@ Go back to Settings -> Custom domain and click on the "Add binding" link behind 
 # Deploy a Azure Container App to test with
 
 ```
-RESOURCE_GROUP="dnw-rg" \
-LOCATION="westeurope" \
-CONTAINERAPPS_ENVIRONMENT="Prd" \
-APP_NAME="my-container-app"
+ENVIRONMENT_NAME="Prd"
+
+az containerapp env create \
+  --name $ENVIRONMENT_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --location $LOCATION
 ```
 
 ```
+APP_NAME="my-container-app"
+
 az containerapp create \
  --name $APP_NAME \
  --resource-group $RESOURCE_GROUP \
