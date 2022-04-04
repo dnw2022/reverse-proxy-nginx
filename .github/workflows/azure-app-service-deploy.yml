@@ -1,5 +1,18 @@
-# This deployment files assumes a Service Principal with the name mentioned in the env section
-# below has already been created
+# This deployment files assumes a Service Principal (SP) with the name mentioned in the env section below has already been created
+#
+# To create a SP:
+#
+# az ad sp create-for-rbac \
+#   --name $SERVICE_PRINCIPAL_NAME \
+#   --role $CONTRIBUTOR_ROLE_NAME \
+#   --scopes /subscriptions/$SUBSCRIPTION_ID \
+#   --sdk-auth
+#
+# Note that the scope is for the whole subscription and not just a resource group.
+# Limiting the scope to a specific Resource Group does not allow for checking if the Resource Group exists
+# and for creating it if it does not.
+#
+# More details: https://github.com/Azure/login#configure-deployment-credentials
 name: Deploy to Azure App Service (AAS)
 
 on:
@@ -11,12 +24,11 @@ on:
 env:
   SUBSCRIPTION_ID: "f2485aef-25f1-418d-bb35-92098bbf3b08"
   SERVICE_PRINCIPAL_NAME: "sp-dnw"
-  RESOURCE_GROUP: "dnw-rg"
+  RESOURCE_GROUP: "rg-dnw"
   LOCATION: "westeurope"
-  ACR_NAME: "acrdnw"
-  ACR_LOGIN_SERVER: "acrdnw.azurecr.io"
-  PLAN: "dnw-plan"
-  APP_NAME: "reverse-proxy-nginx"
+  ACR_NAME: "acrdnw2"
+  PLAN: "plan-dnw"
+  APP_NAME: "reverse-proxy-nginx-dnw"
 
 jobs:
   build-and-deploy:
@@ -26,64 +38,73 @@ jobs:
       - uses: actions/checkout@v2
 
       # https://github.com/Azure/login
-      # Also see for the SP creation: https://github.com/Azure/login#configure-deployment-credentials
-      # The scope is necessary
-      # Creating the SP like this
-      # az ad sp create-for-rbac --name $AKS_SERVICE_PRINCIPAL_NAME --role $AKS_CONTRIBUTOR_ROLE_NAME
-      # And afterwars using az role assignment create did not work
-      # Probably because the scope is needed to create the full json
       - name: Azure login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Create Azure Resources
+      - name: Create Azure Resources if they don't exist
         run: |-
           if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
             echo "Resource Group $RESOURCE_GROUP does not exist. Creating it.."
-            # az group create --name $RESOURCE_GROUP --location $LOCATION
+            az group create --name $RESOURCE_GROUP --location $LOCATION
           fi
 
           if [[ $(az acr list --query "[?name=='$ACR_NAME'] | length(@)") < 1 ]]
           then
-            echo "ACR $ACR_NAME does not exist. Creating it.."
-            # az acr create \
-            #   --resource-group $RESOURCE_GROUP \
-            #   --name $ACR_NAME \
-            #   --sku Basic
+            echo "Azure Container Registry $ACR_NAME does not exist. Creating it.."
+            az acr create \
+              --resource-group $RESOURCE_GROUP \
+              --name $ACR_NAME \
+              --sku Basic
 
-            sudo apt install -y jq
-            ACR_ID=/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ContainerRegistry/registries/$ACR_NAME
-            SERVICE_PRINCIPAL_OBJECT_ID=$(az ad sp list --filter "displayname eq '$SERVICE_PRINCIPAL_NAME'" --query "[].{displayName:displayName, objectId:objectId}" | jq -r '.[0].objectId')
+            # It would make sense to assume that the SP that creates an acr has full rights on that acr?
+            # sudo apt install -y jq
+            # ACR_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ContainerRegistry/registries/$ACR_NAME"
+            # SERVICE_PRINCIPAL_OBJECT_ID=$(az ad sp list --filter "displayname eq '$SERVICE_PRINCIPAL_NAME'" --query "[].{displayName:displayName, objectId:objectId}" | jq -r '.[0].objectId')
+            # echo "Assigning role"
+            # echo "SERVICE_PRINCIPAL_OBJECT_ID=$SERVICE_PRINCIPAL_OBJECT_ID"
+            # echo "ACR_ID=$ACR_ID"
             # az role assignment create --assignee $SERVICE_PRINCIPAL_OBJECT_ID --scope $ACR_ID --role acrpush
           fi
 
           if [[ $(az appservice plan list --query "[?name=='$PLAN'] | length(@)") < 1 ]] 
           then
-            echo "Aappservice plan $PLAN does not exist. Creating it.."
-            # az appservice plan create \
-            #   -g $RESOURCE_GROUP \
-            #   -n $PLAN \
-            #   --is-linux \
-            #   --number-of-workers 1 \
-            #   --sku B1
-          fi
-
-          if [[ $(az webapp list --query "[?name=='$APP_NAME'] | length(@)") < 1 ]] 
-          then
-            echo "Webapp $APP_NAME does not exist. Creating it.."
-            # az webapp create \
-            #   --resource-group $RESOURCE_GROUP \
-            #   --plan $PLAN \
-            #   --name $APP_NAME \
-            #   --deployment-container-image-name $ACR_NAME.azurecr.io/$APP_NAME:latest
+            echo "App Service Plan $PLAN does not exist. Creating it.."
+            az appservice plan create \
+              -g $RESOURCE_GROUP \
+              -n $PLAN \
+              --is-linux \
+              --number-of-workers 1 \
+              --sku B1
           fi
 
       # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
       - name: Build images and push them to Azure Container Service (ACR)
         run: |-
           az acr login --name $ACR_NAME
-          ACR_TAG="${{ env.ACR_LOGIN_SERVER }}/reverse-proxy-nginx:latest"
+          ACR_TAG="$ACR_NAME.azurecr.io/$APP_NAME:latest"
           docker build -t $ACR_TAG .
           docker push $ACR_TAG
           az acr repository list --name $ACR_NAME --output table
+
+      - name: Create Azure Web App if it does not exist.
+        run: |-
+          if [[ $(az webapp list --query "[?name=='$APP_NAME'] | length(@)") < 1 ]] 
+          then
+            echo "Webapp $APP_NAME does not exist. Creating it.."
+
+            az acr update -n $ACR_NAME --admin-enabled true
+
+            ACR_TAG="$ACR_NAME.azurecr.io/$APP_NAME:latest"
+            az webapp create \
+              --resource-group $RESOURCE_GROUP \
+              --plan $PLAN \
+              --name $APP_NAME \
+              --deployment-container-image-name $ACR_TAG
+
+            az webapp deployment container config \
+              --name $APP_NAME \
+              --resource-group $RESOURCE_GROUP \
+              --enable-cd true
+          fi

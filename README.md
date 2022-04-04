@@ -78,11 +78,11 @@ Create Service Principal (SP):
 az ad sp create-for-rbac \
   --name $SERVICE_PRINCIPAL_NAME \
   --role $CONTRIBUTOR_ROLE_NAME \
-  --scopes /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP \
+  --scopes /subscriptions/$SUBSCRIPTION_ID \
   --sdk-auth
 ```
 
-The output of this command is a json object. You need to create a github secret named AZURE_CREDENTIALS and store this json to be able continuous integration / deployment (CI/CD).
+The output of this command is a json object. You need to create a github secret named AZURE_CREDENTIALS and store this json object as its value to be enable continuous integration / -deployment (CI/CD).
 
 The SP needs to have rights to push to the Azure Container Registry (ACR):
 
@@ -156,6 +156,10 @@ az containerapp create \
  --ingress 'external' \
  --query properties.configuration.ingress.fqdn
 ```
+
+# Issues
+
+SP has too many rights? Maybe better to create Resource Group and Container Registry (ACR) manually first?
 
 # More resources on Azure Container Apps
 
