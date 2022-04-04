@@ -11,7 +11,7 @@ on:
 env:
   SUBSCRIPTION_ID: "f2485aef-25f1-418d-bb35-92098bbf3b08"
   SERVICE_PRINCIPAL_NAME: "sp-dnw"
-  RESOURCE_GROUP: "rg-dnw"
+  RESOURCE_GROUP: "dnw-rg"
   LOCATION: "westeurope"
   ACR_NAME: "acrdnw"
   ACR_LOGIN_SERVER: "acrdnw.azurecr.io"
