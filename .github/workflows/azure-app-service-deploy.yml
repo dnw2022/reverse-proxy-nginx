@@ -149,21 +149,25 @@ jobs:
               --name $PROXY_APP_NAME \
               --resource-group $RESOURCE_GROUP \
               --enable-cd true
-
-            az config hostname add \
-              --hostname $WILDCARD_DOMAIN \
-              --resource-group $RESOURCE_GROUP \
-              --webapp-name $PROXY_APP_NAME
-
-            az webapp config ssl upload \
-              --certificate-file $WILDCARD_PFX_BASE64 \
-              --certificate-password $WILDCARD_PFX_PWD \
-              --name $PROXY_APP_NAME \
-              --resource-group $RESOURCE_GROUP
-
-            az webapp config ssl bind \
-              --certificate-thumbprint $WILDCARD_PFX_THUMBPRINT \
-              --name $PROXY_APP_NAME
-              --resource-group $RESOURCE_GROUP
-              --ssl-type SNI
           fi
+
+      - name: Create Azure Web App if it does not exist.
+        run: |-
+          echo "az config hostname add --hostname $WILDCARD_DOMAIN --resource-group $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME"
+          az config hostname add \
+            --hostname "$WILDCARD_DOMAIN" \
+            --resource-group $RESOURCE_GROUP \
+            --webapp-name $PROXY_APP_NAME
+
+          echo $WILDCARD_PFX_BASE64 | base64 --decode > cert.pfx
+          az webapp config ssl upload \
+            --certificate-file cert.pfx \
+            --certificate-password $WILDCARD_PFX_PWD \
+            --name $PROXY_APP_NAME \
+            --resource-group $RESOURCE_GROUP
+
+          # az webapp config ssl bind \
+          #   --certificate-thumbprint $WILDCARD_PFX_THUMBPRINT \
+          #   --name $PROXY_APP_NAME
+          #   --resource-group $RESOURCE_GROUP
+          #   --ssl-type SNI
