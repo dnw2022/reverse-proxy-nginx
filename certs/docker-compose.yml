@@ -1,0 +1,15 @@
+version: "3.7"
+services:
+  certbot:
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    image: certbot
+    build:
+      dockerfile: Dockerfile
+      context: .
+    volumes:
+      - .:/src
+      # - /etc/letsencrypt:/etc/letsencrypt
+      # - /var/lib/letsencrypt:/var/lib/letsencrypt
+    # to keep the container running
+    command: tail -F anything

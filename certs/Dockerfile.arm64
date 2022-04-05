@@ -1,0 +1,4 @@
+# FROM certbot/dns-cloudflare
+FROM certbot/dns-cloudflare:arm64v8-v1.24.0
+
+ENTRYPOINT ["/usr/bin/env"]
