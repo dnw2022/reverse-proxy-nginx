@@ -50,7 +50,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Create Azure Resources if they don't exist
+      - name: Create Azure Resources if they do not exist
         run: |-
           if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
             echo "Resource Group $RESOURCE_GROUP does not exist. Creating it.."
@@ -130,7 +130,7 @@ jobs:
 
           rm default.conf
 
-      - name: Create Azure Web App if it does not exist.
+      - name: Create Azure Web App if it does not exist
         run: |-
           if [[ $(az webapp list -g $RESOURCE_GROUP --query "[?name=='$PROXY_APP_NAME'] | length(@)") < 1 ]] 
           then
