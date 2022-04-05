@@ -57,7 +57,7 @@ jobs:
             az group create --name $RESOURCE_GROUP --location $LOCATION
           fi
 
-          if [[ $(az acr list --query "[?name=='$ACR_NAME'] | length(@)") < 1 ]]
+          if [[ $(az acr list -g $RESOURCE_GROUP --query "[?name=='$ACR_NAME'] | length(@)") < 1 ]]
           then
             echo "Azure Container Registry $ACR_NAME does not exist. Creating it.."
             az acr create \
@@ -75,7 +75,7 @@ jobs:
             # az role assignment create --assignee $SERVICE_PRINCIPAL_OBJECT_ID --scope $ACR_ID --role acrpush
           fi
 
-          if [[ $(az appservice plan list --query "[?name=='$PLAN'] | length(@)") < 1 ]] 
+          if [[ $(az appservice plan list -g $RESOURCE_GROUP --query "[?name=='$PLAN'] | length(@)") < 1 ]] 
           then
             echo "App Service Plan $PLAN does not exist. Creating it.."
             az appservice plan create \
@@ -100,7 +100,7 @@ jobs:
               --internal-only false
           fi
 
-          if [[ $(az containerapp list --query "[?name=='$CONTAINER_APP_NAME'] | length(@)") < 1 ]] 
+          if [[ $(az containerapp list -g $RESOURCE_GROUP --query "[?name=='$CONTAINER_APP_NAME'] | length(@)") < 1 ]] 
           then
             echo "Containerapp $CONTAINER_APP_NAME does not exist. Creating it.."
             az containerapp create \
@@ -132,7 +132,7 @@ jobs:
 
       - name: Create Azure Web App if it does not exist.
         run: |-
-          if [[ $(az webapp list --query "[?name=='$PROXY_APP_NAME'] | length(@)") < 1 ]] 
+          if [[ $(az webapp list -g $RESOURCE_GROUP --query "[?name=='$PROXY_APP_NAME'] | length(@)") < 1 ]] 
           then
             echo "Webapp $PROXY_APP_NAME does not exist. Creating it.."
 
@@ -151,23 +151,30 @@ jobs:
               --enable-cd true
           fi
 
-      - name: Create Azure Web App if it does not exist.
+      - name: Upload wildcard pfx and add custom domain
         run: |-
-          echo "az webapp config hostname add --hostname $WILDCARD_DOMAIN --resource-group $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME"
-          az webapp config hostname add \
-            --hostname $WILDCARD_DOMAIN \
-            --resource-group $RESOURCE_GROUP \
-            --webapp-name $PROXY_APP_NAME
+          if [[ $(az webapp config hostname list -g $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME --query "[?name=='$WILDCARD_DOMAIN'] | length(@)") < 1 ]] 
+          then
+            echo "az webapp config hostname add --hostname $WILDCARD_DOMAIN --resource-group $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME"
+            az webapp config hostname add \
+              --hostname $WILDCARD_DOMAIN \
+              --resource-group $RESOURCE_GROUP \
+              --webapp-name $PROXY_APP_NAME
+          fi
 
-          echo $WILDCARD_PFX_BASE64 | base64 --decode > cert.pfx
-          az webapp config ssl upload \
-            --certificate-file cert.pfx \
-            --certificate-password $WILDCARD_PFX_PWD \
-            --name $PROXY_APP_NAME \
-            --resource-group $RESOURCE_GROUP
+          if [[ $(az webapp config ssl list -g $RESOURCE_GROUP --query "[?thumbprint=='$WILDCARD_PFX_THUMBPRINT'] | length(@)") < 1 ]] 
+          then
+            echo $WILDCARD_PFX_BASE64 | base64 --decode > cert.pfx
+            az webapp config ssl upload \
+              --certificate-file cert.pfx \
+              --certificate-password $WILDCARD_PFX_PWD \
+              --name $PROXY_APP_NAME \
+              --resource-group $RESOURCE_GROUP
+            rm cert.pfx
 
-          # az webapp config ssl bind \
-          #   --certificate-thumbprint $WILDCARD_PFX_THUMBPRINT \
-          #   --name $PROXY_APP_NAME
-          #   --resource-group $RESOURCE_GROUP
-          #   --ssl-type SNI
+            az webapp config ssl bind \
+              --certificate-thumbprint $WILDCARD_PFX_THUMBPRINT \
+              --name $PROXY_APP_NAME \
+              --resource-group $RESOURCE_GROUP \
+              --ssl-type SNI
+          fi
