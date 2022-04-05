@@ -103,11 +103,16 @@ jobs:
           if [[ $(az containerapp list -g $RESOURCE_GROUP --query "[?name=='$CONTAINER_APP_NAME'] | length(@)") < 1 ]] 
           then
             echo "Containerapp $CONTAINER_APP_NAME does not exist. Creating it.."
+            # For CPU and Memory limits see: https://docs.microsoft.com/en-us/azure/container-apps/containers
             az containerapp create \
               --name $CONTAINER_APP_NAME \
               --resource-group $RESOURCE_GROUP \
               --environment $CONTAINER_APP_ENV \
               --image $CONTAINER_APP_IMAGE \
+              --cpu 0.25 \
+              --memory 0.5Gi \
+              --min-replicas 0 \
+              --max-replicas 2 \
               --target-port 80 \
               --ingress "external" \
               --query properties.configuration.ingress.fqdn
