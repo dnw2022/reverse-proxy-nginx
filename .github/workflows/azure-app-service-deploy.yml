@@ -32,6 +32,10 @@ env:
   CONTAINER_APP_ENV: "Prod"
   CONTAINER_APP_NAME: "my-container-app"
   CONTAINER_APP_IMAGE: "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+  WILDCARD_DOMAIN: "*.dotnet-works.com"
+  WILDCARD_PFX_BASE64: ${{ secrets.WILDCARD_PFX_BASE64 }}
+  WILDCARD_PFX_THUMBPRINT: "85C4E5002755A36942CC34286180EC29AC66D595"
+  WILDCARD_PFX_PWD: ${{ secrets.WILDCARD_PFX_PWD }}
 
 jobs:
   build-and-deploy:
@@ -92,7 +96,7 @@ jobs:
             az containerapp env create \
               --name $CONTAINER_APP_ENV \
               --resource-group $RESOURCE_GROUP \
-              --location $LOCATION
+              --location $LOCATION \
               --internal-only false
           fi
 
@@ -145,4 +149,21 @@ jobs:
               --name $PROXY_APP_NAME \
               --resource-group $RESOURCE_GROUP \
               --enable-cd true
+
+            az config hostname add \
+              --hostname $WILDCARD_DOMAIN \
+              --resource-group $RESOURCE_GROUP \
+              --webapp-name $PROXY_APP_NAME
+
+            az webapp config ssl upload \
+              --certificate-file $WILDCARD_PFX_BASE64 \
+              --certificate-password $WILDCARD_PFX_PWD \
+              --name $PROXY_APP_NAME \
+              --resource-group $RESOURCE_GROUP
+
+            az webapp config ssl bind \
+              --certificate-thumbprint $WILDCARD_PFX_THUMBPRINT \
+              --name $PROXY_APP_NAME
+              --resource-group $RESOURCE_GROUP
+              --ssl-type SNI
           fi
