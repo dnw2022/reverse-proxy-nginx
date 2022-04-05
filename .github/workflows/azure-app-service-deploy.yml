@@ -34,7 +34,7 @@ env:
   CONTAINER_APP_IMAGE: "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
   WILDCARD_DOMAIN: "*.dotnet-works.com"
   WILDCARD_PFX_BASE64: ${{ secrets.WILDCARD_PFX_BASE64 }}
-  WILDCARD_PFX_THUMBPRINT: "85C4E5002755A36942CC34286180EC29AC66D595"
+  WILDCARD_PFX_THUMBPRINT: ${{ secrets.WILDCARD_PFX_THUMBPRINT }}
   WILDCARD_PFX_PWD: ${{ secrets.WILDCARD_PFX_PWD }}
 
 jobs:

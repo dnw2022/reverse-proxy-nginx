@@ -1,31 +1,62 @@
+# https://www.atmosera.com/blog/using-github-actions-to-manage-certbot-lets-encrypt-certificates/
 name: Renew wildcard certificate if it expires soon
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
   schedule:
     # Daily at 16:00 UTC
     - cron: "16 0 * * *"
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }}
   WILDCARD_PFX_BASE64: ${{ secrets.WILDCARD_PFX_BASE64 }}
+  WILDCARD_PFX_PWD: ${{ secrets.WILDCARD_PFX_PWD }}
+  CERT_EMAIL: "jeroen_bijlsma@yahoo.com"
+  CERT_DOMAIN: "x.dotnet-works.com"
+  CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
 
 jobs:
   renew_certs:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          echo $WILDCARD_PFX_BASE64 | base64 --decode > dnw.pfx
-          openssl pkcs12 -in dnw.pfx -out dnw.pem -nodes
+      - uses: actions/checkout@v2
+
+      - name: "Renew certificates"
+        run: |
+          echo "${{ secrets.TEST_SECRET }}" | base64 --decode > ./dnw.pfx
+          # echo "${{ secrets.WILDCARD_PFX_BASE64 }}" | base64 --decode > dnw.pfx
+          openssl pkcs12 -in dnw.pfx -out dnw.pem -nodes -password pass:$WILDCARD_PFX_PWD
 
           endInDays=60
           let endInSeconds=endInDays*24*60*60
 
           expiring=$(openssl x509 -in dnw.pem -checkend $endInSeconds | grep 'Certificate will expire')
+
+          rm ./dnw.pfx
+          rm ./dnw.pem
+
           if [[ ! -z "$expiring" ]]
           then
-              echo "cert is expiring with $endInDays"
+              echo "cert is expiring within $endInDays days. Renewing.."
 
-              sudo snap install certbot-dns-cloudflare
+              chmod +x ./renew_certs.sh
+              bash ./renew_certs.sh
 
-              certbot
+              FINGER_PRINT=$(openssl pkcs12 -in ./$CERT_DOMAIN.pfx -nodes -password pass:$WILDCARD_PFX_PWD | openssl x509 -noout -fingerprint | sed -e "s/\SHA1 Fingerprint=//g" -e "s/\://g")
+              
+              # https://docs.github.com/en/enterprise-cloud@latest/actions/security-guides/encrypted-secrets
+              cat $CERT_DOMAIN.pfx | base64
+              cat $CERT_DOMAIN.pfx | base64 > $CERT_DOMAIN.base64
+
+              gh secret set WILDCARD_PFX_THUMBPRINT --body "$FINGER_PRINT"
+              gh secret set WILDCARD_PFX_BASE64 < $CERT_DOMAIN.base64
+
+              echo "Cleanup Files"
+              rm ./cloudfare.ini
+              rm ./$CERT_DOMAIN.pfx
+              rm ./$CERT_DOMAIN.base64
+
+              # gh workflow run azure-app-service-deploy.yml --ref master
           fi
