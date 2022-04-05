@@ -84,6 +84,8 @@ jobs:
 
       - name: Create Azure Container App if it does not exist
         run: |-
+          az config set extension.use_dynamic_install=yes_without_prompt
+
           if [[ $(az containerapp env list -g $RESOURCE_GROUP --query "[?name=='$CONTAINER_APP_ENV'] | length(@)") < 1 ]] 
           then
             echo "Containerapp Environment $CONTAINER_APP_ENV does not exist. Creating it.."
