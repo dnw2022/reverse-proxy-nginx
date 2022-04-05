@@ -116,8 +116,8 @@ jobs:
       # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
       - name: Build Webapp image and push it to Azure Container Service (ACR)
         run: |-
-          ENV_IP=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.staticIp")
-          ENV_DEFAULT_DOMAIN=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.defaultDomain")
+          ENV_IP=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.staticIp" | tr -d '"')
+          ENV_DEFAULT_DOMAIN=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.defaultDomain" | tr -d '"')
           sed -r "s/__ENV_IP__/$ENV_IP/g; s/__ENV_DEFAULT_DOMAIN__/$ENV_DEFAULT_DOMAIN/g" default.conf.tpl > default.conf
 
           cat default.conf
