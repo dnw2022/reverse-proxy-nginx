@@ -5,7 +5,7 @@ services:
     tty: true # docker run -t
     image: certbot
     build:
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.arm64
       context: .
     volumes:
       - .:/src

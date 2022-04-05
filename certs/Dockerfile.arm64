@@ -1,4 +1,10 @@
 # FROM certbot/dns-cloudflare
 FROM certbot/dns-cloudflare:arm64v8-v1.24.0
 
+# https://github.com/Azure/azure-cli/issues/19591
+RUN apk add py3-pip
+RUN apk add gcc musl-dev python3-dev libffi-dev openssl-dev cargo make
+RUN pip install --upgrade pi
+RUN pip install azure-cli
+
 ENTRYPOINT ["/usr/bin/env"]

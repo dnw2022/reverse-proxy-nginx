@@ -1,0 +1,31 @@
+name: Renew wildcard certificate if it expires soon
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily at 16:00 UTC
+    - cron: "16 0 * * *"
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  WILDCARD_PFX_BASE64: ${{ secrets.WILDCARD_PFX_BASE64 }}
+
+jobs:
+  renew_certs:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo $WILDCARD_PFX_BASE64 | base64 --decode > dnw.pfx
+          openssl pkcs12 -in dnw.pfx -out dnw.pem -nodes
+
+          endInDays=60
+          let endInSeconds=endInDays*24*60*60
+
+          expiring=$(openssl x509 -in dnw.pem -checkend $endInSeconds | grep 'Certificate will expire')
+          if [[ ! -z "$expiring" ]]
+          then
+              echo "cert is expiring with $endInDays"
+
+              sudo snap install certbot-dns-cloudflare
+
+              certbot
+          fi
