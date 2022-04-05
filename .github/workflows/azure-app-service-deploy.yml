@@ -28,7 +28,10 @@ env:
   LOCATION: "westeurope"
   ACR_NAME: "acrdnw2"
   PLAN: "plan-dnw"
-  APP_NAME: "reverse-proxy-nginx-dnw"
+  PROXY_APP_NAME: "reverse-proxy-nginx-dnw"
+  CONTAINER_APP_ENV: "Prod"
+  CONTAINER_APP_NAME: "my-container-app"
+  CONTAINER_APP_IMAGE: "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
 
 jobs:
   build-and-deploy:
@@ -79,32 +82,65 @@ jobs:
               --sku B1
           fi
 
-      # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
-      - name: Build images and push them to Azure Container Service (ACR)
+      - name: Create Azure Container App if it does not exist
         run: |-
+          if [[ $(az containerapp env list -g $RESOURCE_GROUP --query "[?name=='$CONTAINER_APP_ENV'] | length(@)") < 1 ]] 
+          then
+            echo "Containerapp Environment $CONTAINER_APP_ENV does not exist. Creating it.."
+            az containerapp env create \
+              --name $CONTAINER_APP_ENV \
+              --resource-group $RESOURCE_GROUP \
+              --location $LOCATION
+              --internal-only false
+          fi
+
+          if [[ $(az containerapp list --query "[?name=='$CONTAINER_APP_NAME'] | length(@)") < 1 ]] 
+          then
+            echo "Containerapp $CONTAINER_APP_NAME does not exist. Creating it.."
+            az containerapp create \
+              --name $CONTAINER_APP_NAME \
+              --resource-group $RESOURCE_GROUP \
+              --environment $CONTAINER_APP_ENV \
+              --image $CONTAINER_APP_IMAGE \
+              --target-port 80 \
+              --ingress "external" \
+              --query properties.configuration.ingress.fqdn
+          fi
+
+      # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
+      - name: Build Webapp image and push it to Azure Container Service (ACR)
+        run: |-
+          ENV_IP=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.staticIp")
+          ENV_DEFAULT_DOMAIN=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.defaultDomain")
+          sed -r "s/__ENV_IP__/$ENV_IP/g; s/__ENV_DEFAULT_DOMAIN__/$ENV_DEFAULT_DOMAIN/g" default.conf.tpl > default.conf
+
+          cat default.conf
+
           az acr login --name $ACR_NAME
-          ACR_TAG="$ACR_NAME.azurecr.io/$APP_NAME:latest"
+          ACR_TAG="$ACR_NAME.azurecr.io/$PROXY_APP_NAME:latest"
           docker build -t $ACR_TAG .
           docker push $ACR_TAG
           az acr repository list --name $ACR_NAME --output table
 
+          rm default.conf
+
       - name: Create Azure Web App if it does not exist.
         run: |-
-          if [[ $(az webapp list --query "[?name=='$APP_NAME'] | length(@)") < 1 ]] 
+          if [[ $(az webapp list --query "[?name=='$PROXY_APP_NAME'] | length(@)") < 1 ]] 
           then
-            echo "Webapp $APP_NAME does not exist. Creating it.."
+            echo "Webapp $PROXY_APP_NAME does not exist. Creating it.."
 
             az acr update -n $ACR_NAME --admin-enabled true
 
-            ACR_TAG="$ACR_NAME.azurecr.io/$APP_NAME:latest"
+            ACR_TAG="$ACR_NAME.azurecr.io/$PROXY_APP_NAME:latest"
             az webapp create \
               --resource-group $RESOURCE_GROUP \
               --plan $PLAN \
-              --name $APP_NAME \
+              --name $PROXY_APP_NAME \
               --deployment-container-image-name $ACR_TAG
 
             az webapp deployment container config \
-              --name $APP_NAME \
+              --name $PROXY_APP_NAME \
               --resource-group $RESOURCE_GROUP \
               --enable-cd true
           fi

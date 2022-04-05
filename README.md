@@ -46,30 +46,13 @@ Define variables:
 
 ```
 RESOURCE_GROUP=dnw-rg \
-SERVICE_PRINCIPAL_NAME=sp-dnw \
-SUBSCRIPTION_ID=f2485aef-25f1-418d-bb35-92098bbf3b08 \
-CONTRIBUTOR_ROLE_NAME=Contributor \
-LOCATION=westeurope \
-ACR_NAME=acrdnw \
-ACR_LOGIN_SERVER=acrdnw.azurecr.io \
-PLAN="dnw-plan" \
-APP_NAME="reverse-proxy-nginx"
+SERVICE_PRINCIPAL_NAME=sp-dnw
 ```
 
 Create Resource Group:
 
 ```
 az group create --name $RESOURCE_GROUP --location $LOCATION
-```
-
-Create Azure Container Registry (ACR)
-
-```
-az acr create \
-  --resource-group $RESOURCE_GROUP \
-  --name $ACR_NAME --sku Basic
-
-ACR_ID=/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ContainerRegistry/registries/$ACR_NAME
 ```
 
 Create Service Principal (SP):
@@ -83,34 +66,6 @@ az ad sp create-for-rbac \
 ```
 
 The output of this command is a json object. You need to create a github secret named AZURE_CREDENTIALS and store this json object as its value to be enable continuous integration / -deployment (CI/CD).
-
-The SP needs to have rights to push to the Azure Container Registry (ACR):
-
-```
-SERVICE_PRINCIPAL_OBJECT_ID=$(az ad sp list --filter "displayname eq '${SERVICE_PRINCIPAL_NAME}'" --query "[].{displayName:displayName, objectId:objectId}" | jq -r '.[0].objectId')
-az role assignment create --assignee $SERVICE_PRINCIPAL_OBJECT_ID --scope $ACR_ID --role acrpush
-```
-
-Create App Service Plan:
-
-```
-az appservice plan create \
-  -g $RESOURCE_GROUP \
-  -n $PLAN \
-  --is-linux \
-  --number-of-workers 1 \
-  --sku B1
-```
-
-Create the Azure App Service:
-
-```
-az webapp create \
-  --resource-group $RESOURCE_GROUP \
-  --plan $PLAN \
-  --name $APP_NAME \
-  --deployment-container-image-name acrdnw.azurecr.io/$APP_NAME:latest
-```
 
 # Setup CI/CD for Azure App Service
 
@@ -126,7 +81,7 @@ You need a pfx file with both public and private key. To create it from a .key a
 openssl pkcs12 -export -out dnw.pfx -inkey dnw.key -in dnw.crt
 ```
 
-In the App Service go to Settings -> Custom Domains. Click on "Add custom domain", enter \*.dotnet-works.com and click "Validate". For Hostname record type choose CNAME. Then click the "Add custom domain" button.
+In the App Service go to Settings -> Custom Domains. Click on "Add custom domain", enter \*.dotnet-works.com and click "Validate". You probably need to add a TXT record with your DNS provider to prove you own the domain. Follow the instructions in the Azure Portal. For Hostname record type choose CNAME. Then click the "Add custom domain" button.
 
 Under TLS/SSL settings click the "Private Key Certificates (.pfx)" tab and choose "Upload Certificate". Select dnw.pfx, enter the certificate password and click "Upload".
 
@@ -156,6 +111,16 @@ az containerapp create \
  --ingress 'external' \
  --query properties.configuration.ingress.fqdn
 ```
+
+# Update Cloudflare DNS
+
+Add a CNAME record:
+
+| Type  | Name             | Content                                   |
+| ----- | ---------------- | ----------------------------------------- |
+| CNAME | my-container-app | reverse-proxy-nginx-dnw.azurewebsites.net |
+
+Name here should be the name of the azure containerapp and content the url of the nginx azure webapp.
 
 # Issues
 
