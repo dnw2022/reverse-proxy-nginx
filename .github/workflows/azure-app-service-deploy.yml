@@ -153,9 +153,9 @@ jobs:
 
       - name: Create Azure Web App if it does not exist.
         run: |-
-          echo "az config hostname add --hostname $WILDCARD_DOMAIN --resource-group $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME"
-          az config hostname add \
-            --hostname "$WILDCARD_DOMAIN" \
+          echo "az webapp config hostname add --hostname $WILDCARD_DOMAIN --resource-group $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME"
+          az webapp config hostname add \
+            --hostname $WILDCARD_DOMAIN \
             --resource-group $RESOURCE_GROUP \
             --webapp-name $PROXY_APP_NAME
 
