@@ -169,7 +169,7 @@ jobs:
 
           if [[ $(az webapp config ssl list -g $RESOURCE_GROUP --query "[?thumbprint=='$CERT_THUMBPRINT'] | length(@)") < 1 ]] 
           then
-            echo $CERT_PFX_BASE64 | base64 --decode > cert.pfx
+            echo "$CERT_PFX_BASE64" | base64 --decode > cert.pfx
             az webapp config ssl upload \
               --certificate-file cert.pfx \
               --certificate-password $CERT_PWD \

@@ -1,4 +1,4 @@
-name: Renew wildcard certificate if it expires soon
+name: Renew certificate if it expires soon
 on:
   workflow_dispatch:
   schedule:
@@ -7,8 +7,8 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }}
-  CERT_PFX_BASE64: ${{ secrets.WILDCARD_PFX_BASE64 }}
-  CERT_PWD: ${{ secrets.WILDCARD_PFX_PWD }}
+  CERT_PFX_BASE64: ${{ secrets.CERT_PFX_BASE64 }}
+  CERT_PWD: ${{ secrets.CERT_PWD }}
   CERT_EMAIL: "jeroen_bijlsma@yahoo.com"
   CERT_DOMAIN: "*.dotnet-works.com"
   CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
