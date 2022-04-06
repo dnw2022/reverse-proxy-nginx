@@ -6,6 +6,7 @@ upstream container_app_env {
 server {
   server_name "~(.*).dotnet-works.com";
   listen 80;
+  return 301 https://$host$request_uri;
 
   location / {
     proxy_set_header X-Real-IP $remote_addr;
