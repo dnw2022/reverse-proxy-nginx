@@ -34,18 +34,34 @@ then
 
   chmod -R 777 ./cloudflare.ini
 
-  sudo certbot certonly \
-    --non-interactive \
-    --agree-tos \
-    --preferred-challenges dns \
-    # --staging \
-    # --test-cert \
-    --dns-cloudflare \
-    --dns-cloudflare-credentials ./cloudflare.ini \
-    --config-dir . \
-    --cert-path . \
-    -m $CERT_EMAIL \
-    -d $CERT_DOMAIN
+  if [ $CERT_STAGING = true ]
+  then
+    echo "Issuing Staging Certificate"
+    sudo certbot certonly \
+      --non-interactive \
+      --agree-tos \
+      --preferred-challenges dns \
+      --staging \
+      --test-cert \
+      --dns-cloudflare \
+      --dns-cloudflare-credentials ./cloudflare.ini \
+      --config-dir . \
+      --cert-path . \
+      -m $CERT_EMAIL \
+      -d $CERT_DOMAIN
+  else
+    echo "Issuing Production Certificate"
+    sudo certbot certonly \
+      --non-interactive \
+      --agree-tos \
+      --preferred-challenges dns \
+      --dns-cloudflare \
+      --dns-cloudflare-credentials ./cloudflare.ini \
+      --config-dir . \
+      --cert-path . \
+      -m $CERT_EMAIL \
+      -d $CERT_DOMAIN    
+  fi
 
   # Certbot runs as root, so it creates all the files as root. This changes the permissions so that other utilities can read the file.
   echo "Set file permissions"
