@@ -50,116 +50,117 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Create Azure Resources if they do not exist
-        run: |-
-          if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
-            echo "Resource Group $RESOURCE_GROUP does not exist. Creating it.."
-            az group create --name $RESOURCE_GROUP --location $LOCATION
-          fi
+      # - name: Create Azure Resources if they do not exist
+      #   run: |-
+      #     if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
+      #       echo "Resource Group $RESOURCE_GROUP does not exist. Creating it.."
+      #       az group create --name $RESOURCE_GROUP --location $LOCATION
+      #     fi
 
-          if [[ $(az acr list -g $RESOURCE_GROUP --query "[?name=='$ACR_NAME'] | length(@)") < 1 ]]
-          then
-            echo "Azure Container Registry $ACR_NAME does not exist. Creating it.."
-            az acr create \
-              --resource-group $RESOURCE_GROUP \
-              --name $ACR_NAME \
-              --sku Basic
+      #     if [[ $(az acr list -g $RESOURCE_GROUP --query "[?name=='$ACR_NAME'] | length(@)") < 1 ]]
+      #     then
+      #       echo "Azure Container Registry $ACR_NAME does not exist. Creating it.."
+      #       az acr create \
+      #         --resource-group $RESOURCE_GROUP \
+      #         --name $ACR_NAME \
+      #         --sku Basic
 
-            # It would make sense to assume that the SP that creates an acr has full rights on that acr?
-            # sudo apt install -y jq
-            # ACR_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ContainerRegistry/registries/$ACR_NAME"
-            # SERVICE_PRINCIPAL_OBJECT_ID=$(az ad sp list --filter "displayname eq '$SERVICE_PRINCIPAL_NAME'" --query "[].{displayName:displayName, objectId:objectId}" | jq -r '.[0].objectId')
-            # echo "Assigning role"
-            # echo "SERVICE_PRINCIPAL_OBJECT_ID=$SERVICE_PRINCIPAL_OBJECT_ID"
-            # echo "ACR_ID=$ACR_ID"
-            # az role assignment create --assignee $SERVICE_PRINCIPAL_OBJECT_ID --scope $ACR_ID --role acrpush
-          fi
+      #       # It would make sense to assume that the SP that creates an acr has full rights on that acr?
+      #       # sudo apt install -y jq
+      #       # ACR_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ContainerRegistry/registries/$ACR_NAME"
+      #       # SERVICE_PRINCIPAL_OBJECT_ID=$(az ad sp list --filter "displayname eq '$SERVICE_PRINCIPAL_NAME'" --query "[].{displayName:displayName, objectId:objectId}" | jq -r '.[0].objectId')
+      #       # echo "Assigning role"
+      #       # echo "SERVICE_PRINCIPAL_OBJECT_ID=$SERVICE_PRINCIPAL_OBJECT_ID"
+      #       # echo "ACR_ID=$ACR_ID"
+      #       # az role assignment create --assignee $SERVICE_PRINCIPAL_OBJECT_ID --scope $ACR_ID --role acrpush
+      #     fi
 
-          if [[ $(az appservice plan list -g $RESOURCE_GROUP --query "[?name=='$PLAN'] | length(@)") < 1 ]] 
-          then
-            echo "App Service Plan $PLAN does not exist. Creating it.."
-            az appservice plan create \
-              -g $RESOURCE_GROUP \
-              -n $PLAN \
-              --is-linux \
-              --number-of-workers 1 \
-              --sku B1
-          fi
+      #     if [[ $(az appservice plan list -g $RESOURCE_GROUP --query "[?name=='$PLAN'] | length(@)") < 1 ]]
+      #     then
+      #       echo "App Service Plan $PLAN does not exist. Creating it.."
+      #       az appservice plan create \
+      #         -g $RESOURCE_GROUP \
+      #         -n $PLAN \
+      #         --is-linux \
+      #         --number-of-workers 1 \
+      #         --sku B1
+      #     fi
 
-      - name: Create Azure Container App if it does not exist
-        run: |-
-          az config set extension.use_dynamic_install=yes_without_prompt
+      # - name: Create Azure Container App if it does not exist
+      #   run: |-
+      #     az config set extension.use_dynamic_install=yes_without_prompt
 
-          if [[ $(az containerapp env list -g $RESOURCE_GROUP --query "[?name=='$CONTAINER_APP_ENV'] | length(@)") < 1 ]] 
-          then
-            echo "Containerapp Environment $CONTAINER_APP_ENV does not exist. Creating it.."
-            az containerapp env create \
-              --name $CONTAINER_APP_ENV \
-              --resource-group $RESOURCE_GROUP \
-              --location $LOCATION \
-              --internal-only false
-          fi
+      #     if [[ $(az containerapp env list -g $RESOURCE_GROUP --query "[?name=='$CONTAINER_APP_ENV'] | length(@)") < 1 ]]
+      #     then
+      #       echo "Containerapp Environment $CONTAINER_APP_ENV does not exist. Creating it.."
+      #       az containerapp env create \
+      #         --name $CONTAINER_APP_ENV \
+      #         --resource-group $RESOURCE_GROUP \
+      #         --location $LOCATION \
+      #         --internal-only false
+      #     fi
 
-          if [[ $(az containerapp list -g $RESOURCE_GROUP --query "[?name=='$CONTAINER_APP_NAME'] | length(@)") < 1 ]] 
-          then
-            echo "Containerapp $CONTAINER_APP_NAME does not exist. Creating it.."
-            # For CPU and Memory limits see: https://docs.microsoft.com/en-us/azure/container-apps/containers
-            az containerapp create \
-              --name $CONTAINER_APP_NAME \
-              --resource-group $RESOURCE_GROUP \
-              --environment $CONTAINER_APP_ENV \
-              --image $CONTAINER_APP_IMAGE \
-              --cpu 0.25 \
-              --memory 0.5Gi \
-              --min-replicas 0 \
-              --max-replicas 2 \
-              --target-port 80 \
-              --ingress "external" \
-              --query properties.configuration.ingress.fqdn
-          fi
+      #     if [[ $(az containerapp list -g $RESOURCE_GROUP --query "[?name=='$CONTAINER_APP_NAME'] | length(@)") < 1 ]]
+      #     then
+      #       echo "Containerapp $CONTAINER_APP_NAME does not exist. Creating it.."
+      #       # For CPU and Memory limits see: https://docs.microsoft.com/en-us/azure/container-apps/containers
+      #       az containerapp create \
+      #         --name $CONTAINER_APP_NAME \
+      #         --resource-group $RESOURCE_GROUP \
+      #         --environment $CONTAINER_APP_ENV \
+      #         --image $CONTAINER_APP_IMAGE \
+      #         --cpu 0.25 \
+      #         --memory 0.5Gi \
+      #         --min-replicas 0 \
+      #         --max-replicas 2 \
+      #         --target-port 80 \
+      #         --ingress "external" \
+      #         --query properties.configuration.ingress.fqdn
+      #     fi
 
-      # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
-      - name: Build Webapp image and push it to Azure Container Registry (ACR)
-        run: |-
-          ENV_IP=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.staticIp" | tr -d '"')
-          ENV_DEFAULT_DOMAIN=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.defaultDomain" | tr -d '"')
-          sed -r "s/__ENV_IP__/$ENV_IP/g; s/__ENV_DEFAULT_DOMAIN__/$ENV_DEFAULT_DOMAIN/g" default.conf.tpl > default.conf
+      # # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
+      # - name: Build Webapp image and push it to Azure Container Registry (ACR)
+      #   run: |-
+      #     ENV_IP=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.staticIp" | tr -d '"')
+      #     ENV_DEFAULT_DOMAIN=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.defaultDomain" | tr -d '"')
+      #     sed -r "s/__ENV_IP__/$ENV_IP/g; s/__ENV_DEFAULT_DOMAIN__/$ENV_DEFAULT_DOMAIN/g" default.conf.tpl > default.conf
 
-          cat default.conf
+      #     cat default.conf
 
-          az acr login --name $ACR_NAME
-          ACR_TAG="$ACR_NAME.azurecr.io/$PROXY_APP_NAME:latest"
-          docker build -t $ACR_TAG .
-          docker push $ACR_TAG
-          az acr repository list --name $ACR_NAME --output table
+      #     az acr login --name $ACR_NAME
+      #     ACR_TAG="$ACR_NAME.azurecr.io/$PROXY_APP_NAME:latest"
+      #     docker build -t $ACR_TAG .
+      #     docker push $ACR_TAG
+      #     az acr repository list --name $ACR_NAME --output table
 
-          rm default.conf
+      #     rm default.conf
 
-      - name: Create Azure Web App if it does not exist
-        run: |-
-          if [[ $(az webapp list -g $RESOURCE_GROUP --query "[?name=='$PROXY_APP_NAME'] | length(@)") < 1 ]] 
-          then
-            echo "Webapp $PROXY_APP_NAME does not exist. Creating it.."
+      # - name: Create Azure Web App if it does not exist
+      #   run: |-
+      #     if [[ $(az webapp list -g $RESOURCE_GROUP --query "[?name=='$PROXY_APP_NAME'] | length(@)") < 1 ]]
+      #     then
+      #       echo "Webapp $PROXY_APP_NAME does not exist. Creating it.."
 
-            az acr update -n $ACR_NAME --admin-enabled true
+      #       az acr update -n $ACR_NAME --admin-enabled true
 
-            ACR_TAG="$ACR_NAME.azurecr.io/$PROXY_APP_NAME:latest"
-            az webapp create \
-              --resource-group $RESOURCE_GROUP \
-              --plan $PLAN \
-              --name $PROXY_APP_NAME \
-              --deployment-container-image-name $ACR_TAG
+      #       ACR_TAG="$ACR_NAME.azurecr.io/$PROXY_APP_NAME:latest"
+      #       az webapp create \
+      #         --resource-group $RESOURCE_GROUP \
+      #         --plan $PLAN \
+      #         --name $PROXY_APP_NAME \
+      #         --deployment-container-image-name $ACR_TAG
 
-            az webapp deployment container config \
-              --name $PROXY_APP_NAME \
-              --resource-group $RESOURCE_GROUP \
-              --enable-cd true
-          fi
+      #       az webapp deployment container config \
+      #         --name $PROXY_APP_NAME \
+      #         --resource-group $RESOURCE_GROUP \
+      #         --enable-cd true
+      #     fi
 
       - name: Upload pfx and add custom domain
         run: |-
           if [[ $(az webapp config hostname list -g $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME --query "[?name=='$DOMAIN'] | length(@)") < 1 ]] 
           then
+            echo "Add webapp hostname"
             echo "az webapp config hostname add --hostname $DOMAIN --resource-group $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME"
             az webapp config hostname add \
               --hostname $DOMAIN \
@@ -169,6 +170,7 @@ jobs:
 
           if [[ $(az webapp config ssl list -g $RESOURCE_GROUP --query "[?thumbprint=='$CERT_THUMBPRINT'] | length(@)") < 1 ]] 
           then
+            echo "Upload certificate"
             echo "$CERT_PFX_BASE64" | base64 --decode > cert.pfx
             az webapp config ssl upload \
               --certificate-file cert.pfx \
@@ -177,6 +179,7 @@ jobs:
               --resource-group $RESOURCE_GROUP
             rm cert.pfx
 
+            echo "Bind certificate"
             az webapp config ssl bind \
               --certificate-thumbprint $CERT_THUMBPRINT \
               --name $PROXY_APP_NAME \
@@ -184,30 +187,37 @@ jobs:
               --ssl-type SNI
           fi
 
-      - name: "Update certificate if it differs from the currently used one for this domain"
-        run: |-
-          CURRENT_THUMBPRINT=$(az webapp config ssl list -g rg-dnw --query "[?subjectName=='$$DOMAIN']" | jq -r ".[0].thumbprint")
+      # - name: "Update certificate if it differs from the currently used one for this domain"
+      #   run: |-
+      #     CURRENT_THUMBPRINT=$(az webapp config ssl list -g rg-dnw --query "[?subjectName=='$$DOMAIN']" | jq -r ".[0].thumbprint")
 
-          if [ $CURRENT_THUMBPRINT != $CERT_THUMBPRINT ]
-          then
-            echo "Upload the new certificate"
-            echo "$CERT_PFX_BASE64" | base64 --decode > cert.pfx
-            az webapp config ssl upload \
-              --certificate-file cert.pfx \
-              --certificate-password $CERT_PWD \
-              --name $PROXY_APP_NAME \
-              --resource-group $RESOURCE_GROUP
-            rm cert.pfx
+      #     if [ $CURRENT_THUMBPRINT != $CERT_THUMBPRINT ]
+      #     then
+      #       echo "Upload the new certificate"
+      #       echo "$CERT_THUMBPRINT"
+      #       echo "$CERT_PFX_BASE64" | base64 --decode > cert.pfx
+      #       az webapp config ssl upload \
+      #         --certificate-file cert.pfx \
+      #         --certificate-password $CERT_PWD \
+      #         --name $PROXY_APP_NAME \
+      #         --resource-group $RESOURCE_GROUP
+      #       rm cert.pfx
 
-            echo "Bind the new certificate"
-            az webapp config ssl bind \
-              --certificate-thumbprint $CERT_THUMBPRINT \
-              --name $PROXY_APP_NAME \
-              --resource-group $RESOURCE_GROUP \
-              --ssl-type SNI
+      #       echo "Unbind the old certificate"
+      #       az webapp config ssl unbind \
+      #         --certificate-thumbprint $CURRENT_THUMBPRINT \
+      #         --name $PROXY_APP_NAME \
+      #         --resource-group $RESOURCE_GROUP
 
-            echo "Delete the old certificate"
-            az webapp config ssl delete \
-              --certificate-thumbprint $CURRENT_THUMBPRINT \
-              --resource-group $RESOURCE_GROUP
-          fi
+      #       echo "Bind the new certificate"
+      #       az webapp config ssl bind \
+      #         --certificate-thumbprint $CERT_THUMBPRINT \
+      #         --name $PROXY_APP_NAME \
+      #         --resource-group $RESOURCE_GROUP \
+      #         --ssl-type SNI
+
+      #       echo "Delete the old certificate"
+      #       az webapp config ssl delete \
+      #         --certificate-thumbprint $CURRENT_THUMBPRINT \
+      #         --resource-group $RESOURCE_GROUP
+      #     fi
