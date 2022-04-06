@@ -148,6 +148,7 @@ jobs:
               --resource-group $RESOURCE_GROUP \
               --plan $PLAN \
               --name $PROXY_APP_NAME \
+              --https-only true \
               --deployment-container-image-name $ACR_TAG
 
             az webapp deployment container config \
