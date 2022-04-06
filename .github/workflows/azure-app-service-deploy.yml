@@ -119,7 +119,7 @@ jobs:
           fi
 
       # https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
-      - name: Build Webapp image and push it to Azure Container Service (ACR)
+      - name: Build Webapp image and push it to Azure Container Registry (ACR)
         run: |-
           ENV_IP=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.staticIp" | tr -d '"')
           ENV_DEFAULT_DOMAIN=$(az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --query "properties.defaultDomain" | tr -d '"')
