@@ -38,8 +38,8 @@ then
     --non-interactive \
     --agree-tos \
     --preferred-challenges dns \
-    --staging \
-    --test-cert \
+    # --staging \
+    # --test-cert \
     --dns-cloudflare \
     --dns-cloudflare-credentials ./cloudflare.ini \
     --config-dir . \
