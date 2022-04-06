@@ -1,14 +1,24 @@
 #!/bin/bash
 
-echo "$WILDCARD_PFX_BASE64" | base64 --decode > $CERT_DOMAIN.pfx
+# Heavily borrowing from: https://www.atmosera.com/blog/using-github-actions-to-manage-certbot-lets-encrypt-certificates/
 
-openssl pkcs12 -in $CERT_DOMAIN.pfx -out $CERT_DOMAIN.pem -nodes -password pass:$WILDCARD_PFX_PWD
+# If there is no certificate issue a new one 
+expiring="Certificate will expire"
 
-endInDays=45
-let endInSeconds=endInDays*24*60*60
+# If there is a certificate, check if it will expire soon
+if [[ ! -z "$WILDCARD_PFX_BASE64" ]]
+then
+  echo "$WILDCARD_PFX_BASE64" | base64 --decode > $CERT_DOMAIN.pfx
 
-expiring=$(openssl x509 -in $CERT_DOMAIN.pem -checkend $endInSeconds)
+  openssl pkcs12 -in $CERT_DOMAIN.pfx -out $CERT_DOMAIN.pem -nodes -password pass:$WILDCARD_PFX_PWD
 
+  endInDays=45
+  let endInSeconds=endInDays*24*60*60
+
+  expiring=$(openssl x509 -in $CERT_DOMAIN.pem -checkend $endInSeconds)
+fi
+
+# Renew if certificate is expiring soon
 if [[ $expiring != "Certificate will not expire" ]]
 then
   echo "Renewal needed"

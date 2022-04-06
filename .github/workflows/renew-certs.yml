@@ -1,10 +1,6 @@
-# https://www.atmosera.com/blog/using-github-actions-to-manage-certbot-lets-encrypt-certificates/
 name: Renew wildcard certificate if it expires soon
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
   schedule:
     # Daily at 16:00 UTC
     - cron: "16 0 * * *"
@@ -14,7 +10,7 @@ env:
   WILDCARD_PFX_BASE64: ${{ secrets.WILDCARD_PFX_BASE64 }}
   WILDCARD_PFX_PWD: ${{ secrets.WILDCARD_PFX_PWD }}
   CERT_EMAIL: "jeroen_bijlsma@yahoo.com"
-  CERT_DOMAIN: "x.dotnet-works.com"
+  CERT_DOMAIN: "*.dotnet-works.com"
   CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
 
 jobs:
@@ -22,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: cert-renewal
 
       - name: "Renew certificates"
         run: |-
