@@ -32,10 +32,10 @@ env:
   CONTAINER_APP_ENV: "Prod"
   CONTAINER_APP_NAME: "my-container-app"
   CONTAINER_APP_IMAGE: "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
-  WILDCARD_DOMAIN: "*.dotnet-works.com"
-  WILDCARD_PFX_BASE64: ${{ secrets.WILDCARD_PFX_BASE64 }}
-  WILDCARD_PFX_THUMBPRINT: ${{ secrets.WILDCARD_PFX_THUMBPRINT }}
-  WILDCARD_PFX_PWD: ${{ secrets.WILDCARD_PFX_PWD }}
+  DOMAIN: "*.dotnet-works.com"
+  CERT_PFX_BASE64: ${{ secrets.CERT_PFX_BASE64 }}
+  CERT_THUMBPRINT: ${{ secrets.CERT_THUMBPRINT }}
+  CERT_PWD: ${{ secrets.CERT_PWD }}
 
 jobs:
   build-and-deploy:
@@ -156,29 +156,29 @@ jobs:
               --enable-cd true
           fi
 
-      - name: Upload wildcard pfx and add custom domain
+      - name: Upload pfx and add custom domain
         run: |-
-          if [[ $(az webapp config hostname list -g $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME --query "[?name=='$WILDCARD_DOMAIN'] | length(@)") < 1 ]] 
+          if [[ $(az webapp config hostname list -g $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME --query "[?name=='$DOMAIN'] | length(@)") < 1 ]] 
           then
-            echo "az webapp config hostname add --hostname $WILDCARD_DOMAIN --resource-group $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME"
+            echo "az webapp config hostname add --hostname $DOMAIN --resource-group $RESOURCE_GROUP --webapp-name $PROXY_APP_NAME"
             az webapp config hostname add \
-              --hostname $WILDCARD_DOMAIN \
+              --hostname $DOMAIN \
               --resource-group $RESOURCE_GROUP \
               --webapp-name $PROXY_APP_NAME
           fi
 
-          if [[ $(az webapp config ssl list -g $RESOURCE_GROUP --query "[?thumbprint=='$WILDCARD_PFX_THUMBPRINT'] | length(@)") < 1 ]] 
+          if [[ $(az webapp config ssl list -g $RESOURCE_GROUP --query "[?thumbprint=='$CERT_THUMBPRINT'] | length(@)") < 1 ]] 
           then
-            echo $WILDCARD_PFX_BASE64 | base64 --decode > cert.pfx
+            echo $CERT_PFX_BASE64 | base64 --decode > cert.pfx
             az webapp config ssl upload \
               --certificate-file cert.pfx \
-              --certificate-password $WILDCARD_PFX_PWD \
+              --certificate-password $CERT_PWD \
               --name $PROXY_APP_NAME \
               --resource-group $RESOURCE_GROUP
             rm cert.pfx
 
             az webapp config ssl bind \
-              --certificate-thumbprint $WILDCARD_PFX_THUMBPRINT \
+              --certificate-thumbprint $CERT_THUMBPRINT \
               --name $PROXY_APP_NAME \
               --resource-group $RESOURCE_GROUP \
               --ssl-type SNI
