@@ -102,6 +102,14 @@ az ad sp create-for-rbac \
 
 Another issue is that running customer-facing Azure Container Apps is tricky if we allow scaling down to 0. Scaling up to 1 takes at least 5 seconds or so
 
+# Force HTTPS
+
+There are two ways to force HTTPs. Both working the same way, but returning a 301 redirect response.
+
+The easiest way is to only allow HTTPS for the reverse-proxy Azure Webapp. That can be done under Settings -> TLS/SSL settings setting HTTPS Only to "On".
+
+The second option is to use Cloudflare. In the Cloudflare Portal choose the domain first. Then under SSL/TLS -> Edge Certificates turn "Automatic HTTPS Rewrites" on. Note that Cloudflare has to be configured to act as a proxy for each DNS entry where you want to enable this.
+
 # More resources on Azure Container Apps
 
 https://docs.microsoft.com/en-us/azure/container-apps/get-started?tabs=bash
