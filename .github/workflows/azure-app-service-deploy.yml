@@ -183,3 +183,31 @@ jobs:
               --resource-group $RESOURCE_GROUP \
               --ssl-type SNI
           fi
+
+      - name: "Update certificate if it differs from the currently used one for this domain"
+        run: |-
+          CURRENT_THUMBPRINT=$(az webapp config ssl list -g rg-dnw --query "[?subjectName=='$$DOMAIN']" | jq -r ".[0].thumbprint")
+
+          if [ $CURRENT_THUMBPRINT != $CERT_THUMBPRINT ]
+          then
+            echo "Upload the new certificate"
+            echo "$CERT_PFX_BASE64" | base64 --decode > cert.pfx
+            az webapp config ssl upload \
+              --certificate-file cert.pfx \
+              --certificate-password $CERT_PWD \
+              --name $PROXY_APP_NAME \
+              --resource-group $RESOURCE_GROUP
+            rm cert.pfx
+
+            echo "Bind the new certificate"
+            az webapp config ssl bind \
+              --certificate-thumbprint $CERT_THUMBPRINT \
+              --name $PROXY_APP_NAME \
+              --resource-group $RESOURCE_GROUP \
+              --ssl-type SNI
+
+            echo "Delete the old certificate"
+            az webapp config ssl delete \
+              --certificate-thumbprint $CURRENT_THUMBPRINT \
+              --resource-group $RESOURCE_GROUP
+          fi
