@@ -4,7 +4,7 @@ At the time of writing Azure Container Apps do not support custom domains (see: 
 
 One (cheap) way to get around the current limitation of not being able to use custom domains is to use an Azure (Web) App Service that acts as a reverse-proxy. Azure App Services (including Azure Web App Services) do support custom domains. In this case we use a custom nginx container as the reverse proxy.
 
-As mentioned in the documenation, in App Services TLS termination happens at the network load balancers. That means all HTTPS requests reach the app as unencrypted HTTP requests. That's the reason the nginx default.conf file configures nginx to listen on port 80 instead of 443.
+As mentioned in the documenation, in Azure App Services TLS termination happens at the network load balancers. That means all HTTPS requests reach the app as unencrypted HTTP requests. That's the reason the nginx default.conf.tpl template file configures nginx to listen on port 80 instead of 443.
 
 Every Azure Container App that is configured to be externally accessible is automatically made available in Azure with the following format:
 
@@ -62,25 +62,23 @@ az ad sp create-for-rbac \
 
 The output of this command is a json object. You need to create a github secret named AZURE_CREDENTIALS and store this json object as its value to be enable continuous integration / -deployment (CI/CD).
 
-# Custom wildcard domain and HTTPS
+# Generate a (wildcard) certificate for your custom domain
 
-./.github/workflows/azure-app-service-deploy.yml does everything for you during deployment, but needs a secret named WILDCARD_PFX_BASE64 containing the base64 encoded certificate containing both public- and private key.
+The renew-certs github actions workflow (./.github/workflows/renew-certs.yml) creates a new certificate for the confired domain (or renews it when it expires within the next 14 days). The example uses the dotnet-works.com domain. The 14 days is configurable in the renew_certs.sh bash script that is executed by the workflow.
 
-To create a base64 encoded string from the pfx file:
+The example uses Certbot with the Cloudflare plugin to issue certificates. Its highly recommended you use the Letsencrypt staging environment to issue certificates while you are testing. The production environment has strict rate limits. Set the CERT_STAGING environment variable to true to use the Letsencrypt staging environment. Just realize that staging certs have a very short validity. So you might get errors when running the azure-app-service-deploy workflow which uploads a new certificate to Azure. To force issueing a new certificate simply remove the CERT_PFX_BASE64 secret and run the renew-certs workflow manually.
 
-```
-cat dnw.pfx | base64
-```
+The renew-certs workflow runs on a cron schedule (daily at 4 PM) and can be invoked manually from the github UI.
 
-To create a pfx file from a .key and .crt file:
+Check the renew-certs.yml file's ENV section for an explanation of the environment variables needed.
 
-```
-openssl pkcs12 -export -out dnw.pfx -inkey dnw.key -in dnw.crt
-```
+# Configure the reverse-proxy nginx Azure Web App to use the custom domain
+
+The azure-app-service-deploy workflow (./.github/workflows/azure-app-service-deploy.yml) does everything for you during deployment.
 
 # Update Cloudflare DNS
 
-Add a CNAME record:
+Add a CNAME record for each subdomain you want to :
 
 | Type  | Name             | Content                                   |
 | ----- | ---------------- | ----------------------------------------- |
@@ -115,6 +113,32 @@ The second option is to use Cloudflare. In the Cloudflare Portal choose the doma
 Having a seperate bash script is preferable over adding the script directly in the github actions yml file. Some things don't seem to work correctly when putting the bash commands in the github actions step directly.
 
 A lot of bash commands don't return proper exit codes when things fo wrong though. That means the pipeline will actually succeed even though not all steps were successful.
+
+# Pricing comparison
+
+At the time of writing - April 2022 - Azure Container Apps is in preview, so prices might change in the near future:
+
+https://azure.microsoft.com/en-us/pricing/details/container-apps/
+
+The monthly cost of a (mostly) idle Azure Container App that receives less than 2 million requests per month are:
+
+```
+vCPU (0.25): 0.000003 USD vCPU/second * 60 * 60 * 24 * 30 days * 0.25 vCPU =  1.94 USD/month
+Memory (0.5Gb): 0.000003 USD Gb/second * 60 * 60 * 24 * 30 days * 0.5 Gb =    3.89 USD/month
+Total:                                                                        5.92 USD/month
+```
+
+Additionally to use a custom domain you need an Azure Web App. We will look at the linux pricing. Windows is much more expensive:
+
+https://azure.microsoft.com/en-us/pricing/details/app-service/linux/
+
+The B1 instance seems to be the cheapest option (the shared plans are only meant for development and testing):
+
+```
+B1 (1 vCPU, 1.75GB Ram): 0.018 USD/hour * 24 * 30 days = 12.96 USD/month
+```
+
+It looks like the best way is to run all the sites that need to be always running as Azure Web Apps under the B1 linux plan. This includes the nginx reverse proxy that forwards request to Azure Container Apps. Sites/apps for which its ok to scale back to 0 can be run as Azure Container Apps. Especially for microservice apps Azure Container Apps provides tools like DAPR to simplify discovery and interconnectivity. It also allows scaling different components of the Azure Container App to scale independently.
 
 # More resources on Azure Container Apps
 

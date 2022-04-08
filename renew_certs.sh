@@ -12,7 +12,7 @@ then
 
   openssl pkcs12 -in cert.pfx -out cert.pem -nodes -password pass:$CERT_PWD
 
-  endInDays=45
+  endInDays=14
   let endInSeconds=endInDays*24*60*60
 
   expiring=$(openssl x509 -in cert.pem -checkend $endInSeconds)
