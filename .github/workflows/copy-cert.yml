@@ -7,9 +7,11 @@ env:
   CERT_THUMBPRINT: ${{ secrets.CERT_THUMBPRINT }}
 
 jobs:
-  renew_certs:
+  copy_cert:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+
       - name: "Copy certificate"
         run: |-
           chmod +x ./copy_cert.sh
