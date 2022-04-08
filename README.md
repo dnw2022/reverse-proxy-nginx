@@ -110,6 +110,12 @@ The easiest way is to only allow HTTPS for the reverse-proxy Azure Webapp. That 
 
 The second option is to use Cloudflare. In the Cloudflare Portal choose the domain first. Then under SSL/TLS -> Edge Certificates turn "Automatic HTTPS Rewrites" on. Note that Cloudflare has to be configured to act as a proxy for each DNS entry where you want to enable this.
 
+# Issues
+
+Having a seperate bash script is preferable over adding the script directly in the github actions yml file. Some things don't seem to work correctly when putting the bash commands in the github actions step directly.
+
+A lot of bash commands don't return proper exit codes when things fo wrong though. That means the pipeline will actually succeed even though not all steps were successful.
+
 # More resources on Azure Container Apps
 
 https://docs.microsoft.com/en-us/azure/container-apps/get-started?tabs=bash
