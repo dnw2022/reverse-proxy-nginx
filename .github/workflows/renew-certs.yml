@@ -6,13 +6,13 @@ on:
     - cron: "0 16 * * *"
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }}
-  CERT_PFX_BASE64: ${{ secrets.CERT_PFX_BASE64 }}
-  CERT_PWD: ${{ secrets.CERT_PWD }}
-  CERT_EMAIL: "jeroen_bijlsma@yahoo.com"
-  CERT_DOMAIN: "*.dotnet-works.com"
-  CERT_STAGING: false
-  CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+  GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }} # a github token that can write repository secrets
+  CERT_PFX_BASE64: ${{ secrets.CERT_PFX_BASE64 }} # stores the base64 encoded pfx file. Renew-certs sets this secret!
+  CERT_PWD: ${{ secrets.CERT_PWD }} # the passphrase to use for the certificate (pfx file)
+  CERT_EMAIL: "jeroen_bijlsma@yahoo.com" # the email address that is sent to Cloudflare, so Cloudflare can inform you when the certificate is expiring
+  CERT_DOMAIN: "*.dotnet-works.com" # your custom domain
+  CERT_STAGING: false # the Letsencrypt environment to use for issuing certificates. Set to true to use the Staging environment for testing
+  CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }} # The Cloudflare (global) API key. This is used to verify if you own the domain you are requesting a certificate for
 
 jobs:
   renew_certs:
