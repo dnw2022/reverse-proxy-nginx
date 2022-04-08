@@ -1,0 +1,16 @@
+name: Copy certificate from repository secret to organizational secret
+on:
+  workflow_dispatch:
+
+env:
+  CERT_PFX_BASE64: ${{ secrets.CERT_PFX_BASE64 }}
+  CERT_THUMBPRINT: ${{ secrets.CERT_THUMBPRINT }}
+
+jobs:
+  renew_certs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Copy certificate"
+        run: |-
+          chmod +x ./copy_cert.sh
+          bash ./copy_cert.sh
