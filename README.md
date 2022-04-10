@@ -39,6 +39,7 @@ You can create the RG and SP in the Azure Portal or use the az cli tool. Below c
 Define variables:
 
 ```
+SUBSCRIPTION_ID=f2485aef-25f1-418d-bb35-92098bbf3b08 \
 RESOURCE_GROUP=dnw-rg \
 SERVICE_PRINCIPAL_NAME=sp-dnw \
 LOCATION=westeurope
