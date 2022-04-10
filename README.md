@@ -71,7 +71,7 @@ The example uses Certbot with the Cloudflare plugin to issue certificates. Its h
 
 The renew-certs workflow runs on a cron schedule (daily at 4 PM) and can be invoked manually from the github UI.
 
-Check the renew-certs.yml file's ENV section for an explanation of the environment variables needed.
+Check the renew-certs.yml file's ENV section for an explanation of the environment variables needed. Creating an organization and defining secrets at the organization level allows you to use the secrets in all (public) repos within the organization. Note that renew-certs.sh stores the certificate pfx file and thumbprint as organizational secrets.
 
 # Configure the reverse-proxy nginx Azure Web App to use the custom domain
 

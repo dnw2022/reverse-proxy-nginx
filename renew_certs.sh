@@ -79,8 +79,8 @@ then
   cat cert.pfx | base64 > cert.base64
 
   echo "Store thumprint and pfx file as github secrets"
-  gh secret set CERT_THUMBPRINT --org dnw2022 --visibility all --body "$FINGER_PRINT" 
-  gh secret set CERT_PFX_BASE64 --org dnw2022 --visibility all < cert.base64
+  gh secret set CERT_THUMBPRINT --org $ORGANIZATION --visibility all --body "$FINGER_PRINT" 
+  gh secret set CERT_PFX_BASE64 --org $ORGANIZATION --visibility all < cert.base64
 
   echo "Cleanup Files"
   rm ./cloudflare.ini

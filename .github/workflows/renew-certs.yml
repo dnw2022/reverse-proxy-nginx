@@ -7,6 +7,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }} # a github token that can write repository secrets
+  ORGANIZATION: dnw2022
   CERT_PFX_BASE64: ${{ secrets.CERT_PFX_BASE64 }} # stores the base64 encoded pfx file. Renew-certs sets this secret!
   CERT_PWD: ${{ secrets.CERT_PWD }} # the passphrase to use for the certificate (pfx file)
   CERT_EMAIL: "jeroen_bijlsma@yahoo.com" # the email address that is sent to Cloudflare, so Cloudflare can inform you when the certificate is expiring
