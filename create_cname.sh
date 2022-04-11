@@ -53,7 +53,7 @@ then
   http "/zones/$ZONE_ID/dns_records?type=CNAME&name=$APP_CNAME" "POST" "$body"
   exit 0
 else 
-  echo "$CNAME_ID cname record already exists" 
+  echo "$APP_CNAME cname record already exists" 
 fi
 
 exit 0
