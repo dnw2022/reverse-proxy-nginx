@@ -190,11 +190,8 @@ jobs:
 
       - name: Create CNAME record for Azure Container App if it does not exist yet
         run: |-
-          local domain=$(echo $DOMAIN | tr -d '*')
-          local reverseProxyUrl="$PROXY_APP_NAME.azurewebsites.net"
-
           chmod +x ./create_cname.sh
-          bash ./create_cname.sh $domain $cname $CONTAINER_APP_NAME $reverseProxyUrl
+          bash ./create_cname.sh "$(echo $DOMAIN | tr -d '*')" "$CONTAINER_APP_NAME" "$PROXY_APP_NAME.azurewebsites.net"
 
       # - name: "Update certificate if it differs from the currently used one for this domain"
       #   run: |-
