@@ -191,7 +191,7 @@ jobs:
       - name: Create CNAME record for Azure Container App if it does not exist yet
         run: |-
           chmod +x ./create_cname.sh
-          bash ./create_cname.sh "$(echo $DOMAIN | tr -d '*')" "$CONTAINER_APP_NAME" "$PROXY_APP_NAME.azurewebsites.net"
+          bash ./create_cname.sh "$(echo $DOMAIN | sed -e 's/\*.//g')" "$CONTAINER_APP_NAME" "$PROXY_APP_NAME.azurewebsites.net"
 
       # - name: "Update certificate if it differs from the currently used one for this domain"
       #   run: |-
