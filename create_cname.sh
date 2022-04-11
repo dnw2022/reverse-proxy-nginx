@@ -40,6 +40,7 @@ ZONE_ID=$(http "/zones?name=$DOMAIN" | jq ".result[0].id" | tr -d '"')
 
 if [ "$ZONE_ID" = null ]
 then
+  echo "$DOMAIN not found" 
   exit 0
 fi
 
@@ -51,6 +52,8 @@ then
   body='{"type":"CNAME", "name":"'$APP_CNAME'", "content":"'$REVERSE_PROXY_URL'"}'
   http "/zones/$ZONE_ID/dns_records?type=CNAME&name=$APP_CNAME" "POST" "$body"
   exit 0
+else 
+  echo "$CNAME_ID cname record already exists" 
 fi
 
 exit 0
