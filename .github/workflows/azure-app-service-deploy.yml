@@ -36,6 +36,8 @@ env:
   CERT_PFX_BASE64: ${{ secrets.CERT_PFX_BASE64 }}
   CERT_THUMBPRINT: ${{ secrets.CERT_THUMBPRINT }}
   CERT_PWD: ${{ secrets.CERT_PWD }}
+  CF_AUTH_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+  CF_EMAIL: "jeroen_bijlsma@yahoo.com"
 
 jobs:
   build-and-deploy:
