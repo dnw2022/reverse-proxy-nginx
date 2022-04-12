@@ -4,6 +4,7 @@ FROM nginx
 COPY default.conf /etc/nginx/conf.d/default.conf
 
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY init_container.sh /tmp/init_container.sh
 
 # Install OpenSSH and set the password for root to "Docker!". In this example, "apk add" is the install instruction for an Alpine Linux-based image.
 RUN apt update
@@ -21,12 +22,6 @@ RUN chmod +x /tmp/ssh_setup.sh \
 
 # Open port 2222 for SSH access
 EXPOSE 80 2222
-
-RUN ls -la
-RUN ls / 
-
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY init_container.sh /tmp
 
 # Start ssh deamon
 CMD ["/tmp/init_container.sh"]
