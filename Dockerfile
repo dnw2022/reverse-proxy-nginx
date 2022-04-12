@@ -3,8 +3,8 @@ FROM nginx
 # Copy the nginx config file
 COPY default.conf /etc/nginx/conf.d/default.conf
 
-RUN chmod 777 ./init_container.sh
-COPY ./init_container.sh /tmp/init_container.sh
+RUN chmod 777 init_container.sh
+COPY init_container.sh /tmp/init_container.sh
 
 # Install OpenSSH and set the password for root to "Docker!". In this example, "apk add" is the install instruction for an Alpine Linux-based image.
 RUN apt-get update
