@@ -23,7 +23,7 @@ RUN chmod +x /tmp/ssh_setup.sh \
 EXPOSE 80 2222
 
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY init_container.sh /usr/sbin/
+COPY init_container.sh /bin/
 
 # Start ssh deamon
-CMD ["/usr/sbin/init_container.sh"]
+CMD ["/bin/init_container.sh"]
