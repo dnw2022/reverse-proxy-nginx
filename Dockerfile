@@ -22,8 +22,11 @@ RUN chmod +x /tmp/ssh_setup.sh \
 # Open port 2222 for SSH access
 EXPOSE 80 2222
 
+RUN ls -la
+RUN ls / 
+
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY init_container.sh /bin/
+COPY init_container.sh /tmp
 
 # Start ssh deamon
-CMD ["/bin/init_container.sh"]
+CMD ["/tmp/init_container.sh"]
