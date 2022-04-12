@@ -1,8 +1,4 @@
-# This is ssh server systemwide configuration file.
-
-#
-
-# /etc/sshd_config
+# This is ssh server systemwide configuration file. /etc/sshd_config
 
 Port SSH_PORT
 ListenAddress 0.0.0.0

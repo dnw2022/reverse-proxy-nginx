@@ -3,25 +3,29 @@ FROM nginx
 # Copy the nginx config file
 COPY default.conf /etc/nginx/conf.d/default.conf
 
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chmod +x init_container.sh
 COPY init_container.sh /tmp/init_container.sh
 
 # Install OpenSSH and set the password for root to "Docker!". In this example, "apk add" is the install instruction for an Alpine Linux-based image.
-RUN apt update
-RUN apt install -y supervisor openssh-server \
+RUN apt-get update
+RUN apt-get install -y openssh-server \
      && echo "root:Docker!" | chpasswd 
 
-# Copy the sshd_config file to the /etc/ssh/ directory
-COPY sshd_config /etc/ssh/
+RUN mkdir -p /home/LogFiles 
+RUN mkdir -p /opt/startup
+RUN mkdir -p /var/run/sshd
 
-# Copy and configure the ssh_setup file
-RUN mkdir -p /tmp
-COPY ssh_setup.sh /tmp
-RUN chmod +x /tmp/ssh_setup.sh \
-    && (sleep 1;/tmp/ssh_setup.sh 2>&1 > /dev/null)
+# Copy the sshd_config file to the /etc/ssh/ directory
+RUN rm -f /etc/ssh/sshd_config
+COPY sshd_config /etc/ssh/sshd_config
 
 # Open port 2222 for SSH access
+ENV PORT 8080
+ENV SSH_PORT 2222
 EXPOSE 80 2222
 
+ENV WEBSITE_ROLE_INSTANCE_ID localRoleInstance
+ENV WEBSITE_INSTANCE_ID localInstance
+
 # Start ssh deamon
-CMD ["/tmp/init_container.sh"]
+ENTRYPOINT ["/tmp/init_container.sh"]
