@@ -40,7 +40,7 @@ Define variables:
 
 ```
 SUBSCRIPTION_ID=f2485aef-25f1-418d-bb35-92098bbf3b08 \
-RESOURCE_GROUP=dnw-rg \
+RESOURCE_GROUP=rg-dnw \
 SERVICE_PRINCIPAL_NAME=sp-dnw \
 LOCATION=westeurope
 ```
@@ -62,6 +62,18 @@ az ad sp create-for-rbac \
 ```
 
 The output of this command is a json object. You need to create a github secret named AZURE_CREDENTIALS and store this json object as its value to be enable continuous integration / -deployment (CI/CD).
+
+# SSH access
+
+az webapp config set \
+ --resource-group $RESOURCE_GROUP \
+ -n reverse-proxy-nginx-dnw \
+ --remote-debugging-enabled=false
+
+az webapp create-remote-connection \
+ --subscription $SUBSCRIPTION_ID \
+ --resource-group $RESOURCE_GROUP \
+ -n reverse-proxy-nginx-dnw
 
 # Generate a (wildcard) certificate for your custom domain
 
