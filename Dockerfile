@@ -3,9 +3,6 @@ FROM nginx
 # Copy the nginx config file
 COPY default.conf /etc/nginx/conf.d/default.conf
 
-RUN chmod 777 init_container.sh
-COPY init_container.sh /tmp/init_container.sh
-
 # Install OpenSSH and set the password for root to "Docker!". In this example, "apk add" is the install instruction for an Alpine Linux-based image.
 RUN apt-get update
 RUN apt-get install -y openssh-server \
@@ -26,6 +23,9 @@ EXPOSE 80 2222
 
 ENV WEBSITE_ROLE_INSTANCE_ID localRoleInstance
 ENV WEBSITE_INSTANCE_ID localInstance
+
+COPY init_container.sh /tmp/init_container.sh
+RUN chmod +x /tmp/init_container.sh
 
 # Start ssh deamon
 ENTRYPOINT ["/tmp/init_container.sh"]
