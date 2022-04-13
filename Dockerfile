@@ -3,29 +3,43 @@ FROM nginx
 # Copy the nginx config file
 COPY default.conf /etc/nginx/conf.d/default.conf
 
-# Install OpenSSH and set the password for root to "Docker!". In this example, "apk add" is the install instruction for an Alpine Linux-based image.
-RUN apt-get update
-RUN apt-get install -y openssh-server \
-     && echo "root:Docker!" | chpasswd 
+# Install OpenSSH and set the password for root to "Docker!".
+RUN mkdir -p /home/LogFiles /opt/startup \
+     && echo "root:Docker!" | chpasswd \
+     && echo "cd /home" >> /etc/bash.bashrc \
+     && apt-get update \  
+     && apt-get install --yes --no-install-recommends \
+      openssh-server \
+      vim \
+      curl \
+      wget \
+      tcptraceroute \
+      openrc \
+      yarn \
+      net-tools \
+      dnsutils \
+      tcpdump \
+      iproute2
 
-RUN mkdir -p /home/LogFiles 
 RUN mkdir -p /opt/startup
-RUN mkdir -p /var/run/sshd
+COPY init_container.sh /opt/startup/init_container.sh
+RUN chmod -R +x /opt/startup
 
 # Copy the sshd_config file to the /etc/ssh/ directory
 RUN rm -f /etc/ssh/sshd_config
 COPY sshd_config /etc/ssh/sshd_config
+RUN mkdir -p /home/LogFiles \
+     && echo "root:Docker!" | chpasswd \
+     && echo "cd /home" >> /root/.bashrc 
+
+RUN mkdir -p /var/run/sshd
 
 # Open port 2222 for SSH access
-ENV PORT 8080
 ENV SSH_PORT 2222
 EXPOSE 80 2222
 
 ENV WEBSITE_ROLE_INSTANCE_ID localRoleInstance
 ENV WEBSITE_INSTANCE_ID localInstance
 
-COPY init_container.sh /tmp/init_container.sh
-RUN chmod +x /tmp/init_container.sh
-
 # Start ssh deamon
-ENTRYPOINT ["/tmp/init_container.sh"]
+ENTRYPOINT ["/opt/startup/init_container.sh"]
