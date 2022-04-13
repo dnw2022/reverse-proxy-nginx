@@ -129,6 +129,8 @@ jobs:
 
           cat default.conf
 
+          echo "$CERT_PFX_BASE64" | base64 --decode > cert.pfx
+
           az acr login --name $ACR_NAME
           ACR_TAG="$ACR_NAME.azurecr.io/$PROXY_APP_NAME:latest"
           docker build -t $ACR_TAG .
@@ -136,6 +138,7 @@ jobs:
           az acr repository list --name $ACR_NAME --output table
 
           rm default.conf
+          rm cert.pfx
 
       - name: Create Azure Web App if it does not exist
         run: |-

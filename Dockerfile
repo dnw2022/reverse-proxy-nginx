@@ -1,5 +1,9 @@
 FROM nginx
 
+WORKDIR /app
+
+COPY cert.pfx ./
+
 RUN mkdir -p /home/LogFiles /opt/startup \
      && echo "root:Docker!" | chpasswd \
      && echo "cd /home" >> /etc/bash.bashrc \
