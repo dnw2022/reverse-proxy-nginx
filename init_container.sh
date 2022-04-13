@@ -8,6 +8,7 @@ sed -i "s/SSH_PORT/$SSH_PORT/g" /etc/ssh/sshd_config
 /usr/sbin/sshd
 
 echo "Restarting nginx..."
+ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 service nginx restart
 
 exec "$@"

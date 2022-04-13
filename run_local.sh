@@ -1,6 +1,6 @@
 # Create default.conf file based on template
-ENV_IP="20.31.24.249" \
-ENV_DEFAULT_DOMAIN="proudbush-125ae8b6.westeurope.azurecontainerapps.io"
+ENV_IP="51.136.121.51" \
+ENV_DEFAULT_DOMAIN="purplewater-fc773ba7.westeurope.azurecontainerapps.io"
 
 sed -r "s/__ENV_IP__/$ENV_IP/g; s/__ENV_DEFAULT_DOMAIN__/$ENV_DEFAULT_DOMAIN/g" default.conf.tpl > default.conf
 
