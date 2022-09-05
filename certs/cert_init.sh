@@ -6,4 +6,4 @@ cat <<EOF > cloudflare.ini
 dns_cloudflare_api_token = $1
 EOF
 
-chmod 700 cloudfare.ini
+chmod 700 cloudflare.ini

@@ -18,7 +18,8 @@ For the automated mode:
 
 ```
 docker-compose build
-source <(security find-generic-password -w -s 'cli_keys' -a '$(id -un)' | base64 --decode)
+source <(security find-generic-password -w -s 'cli_keys' -a '$(id -un)' | base64 --decode) (on mac)
+source <(cat ~/.secrets/cli_keys.json) (on linux)
 ID=$(docker-compose run -d --rm certbot)
 docker exec $ID sh /src/cert_init.sh $CLOUDFLARE_TOKEN
 docker exec -it $ID sh
